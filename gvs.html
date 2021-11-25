@@ -1,0 +1,171 @@
+<!DOCTYPE HTML>
+<!--
+	Phantom by HTML5 UP
+	html5up.net | @ajlkn
+	Free for personal and commercial use under the CCA 3.0 license (html5up.net/license)
+-->
+<html>
+	<head>
+		<title>Research</title>
+		<meta charset="utf-8" />
+		<meta name="viewport" content="width=device-width, initial-scale=1" />
+		<!--[if lte IE 8]><script src="assets/js/ie/html5shiv.js"></script><![endif]-->
+		<link rel="stylesheet" href="assets/css/main.css" />
+		<!--[if lte IE 9]><link rel="stylesheet" href="assets/css/ie9.css" /><![endif]-->
+		<!--[if lte IE 8]><link rel="stylesheet" href="assets/css/ie8.css" /><![endif]-->
+	</head>
+	<body>
+		<!-- Wrapper -->
+			<div id="wrapper">
+
+				<!-- Header -->
+					<header id="header">
+						<div class="inner">
+
+							<!-- Logo -->
+								<a href="index.html" class="logo">
+									<span class="symbol"><img src="images/sitelogo.png" alt="" /></span><span class="title">Home</span>
+								</a>
+
+							<!-- Nav -->
+							
+								<nav>
+									<ul>
+										<li><a href="#menu">Menu</a></li>
+									</ul>
+								</nav>
+							
+						</div>
+					</header>
+
+				<!-- Menu -->
+				<nav id="menu">
+						<h2>Menu</h2>
+						<ul>
+							<li><a href="https://jingtiangao.github.io/">Home</a></li>
+							<li><a href="https://jingtiangao.github.io/">Bio</a></li>
+							<li><a href="https://jingtiangao.github.io/">Publications</a></li>
+							<!-- <li><a href="elements.html">Elements</a></li> -->
+						</ul>
+					</nav>
+				<!-- Main -->
+					<div id="main">
+						<div class="inner">
+							<h1>Research on ArangoDB single node and cluster mode </h1>
+							
+							<p>Single node test environment</p> 
+                            <p> 10.61.2.206 Sugon server, 40-core CPU, 120G memory, mainly test two algorithms BFS and pagerank
+
+The Arangodb storage engine is divided into two types, Memory mapped file and RocksDB. The mmfile is based on memory. The advantage is that the concurrent read operation is more efficient. The disadvantage is that each time data is loaded into the memory, the index must be re-established. The deadlock problem occurred. The advantage of RocksDB is that the index is persisted to the hard disk, and the read and write are separated, and do not affect each other. The disadvantage is that compared with the memory query efficiency, the effect of using SSD as the data persistence medium may be improved.</p>		
+
+
+							<br/>
+							<p>ROCKSDB storage engine
+After importing the big picture, the memory occupies about 10G, and the actual persistent data hard disk occupies 18G.
+Both the BFS algorithm and the pagerank algorithm used more than 20 minutes in one iteration, and failed to produce specific results.
+In conclusion, although the read-write separation and index persistence have obvious advantages, low query efficiency is also a fatal weakness. Choosing this storage method requires a hard disk with high I/O speed.</p>
+							<p>MMFILE storage engine
+After importing the big picture, the memory occupies about 64G, and the actual persistent data disk occupies 22G. The following picture shows the actual memory occupancy</p>
+							<img src="images/1.png">
+							<br/>
+							
+							<p>Using AQL's bfs traversal option, select 9, 10, and 40 respectively for the traversal depth, and found that the time converges to about 700s, and the depth of the BFS algorithm to traverse the entire graph is about 10, so the BFS time cost is as fast as 694s during testing.
+The actual log is as follows</p>
+                             <img src="images/2.png">
+                             <p>Use the pregel framework integrated in arangodb to run the Pagerank algorithm one iteration time cost 380.776s, where the threshold is set to 0.000001ar function</p>
+							<img src="images/3.png">
+							<p>Use the pregel framework integrated in arangodb to run the Pagerank algorithm for ten iterations. The time cost is 668.12s, where the threshold is set to 0.000001, and the time cost diagram is as follows</p>
+							<img src="images/4.png">
+
+							<p>Two servers
+10.61.2.206
+10.61.2.127
+Port used
+The coordinator layer opens three ports: 10.61.2.2206: 8529, 10.61. 2.127: 8529, 10.61.127: 8534
+
+Use mmfile storage engine for testing, with 40 million nodes and 200 million edge sets
+The designed cluster architecture is:</p>
+							<img src="images/11.png">
+							<p>MMFILE storage engine
+Memory usage after importing large images
+10.61.2.206 occupies about 30G of memory, 10.61.2.127 occupies about 60G
+Use AQL's bfs traversal, try to traverse with different starting points, and find that the time converges to about 120 seconds
+BFS specific time screenshot:
+
+Using AQL's Dfs traversal, try to traverse with a depth of 10 from the unused starting point, and find that the time also converges to about 120 seconds, which is slightly slower than BFS
+DFS specific time screenshot:
+
+CPU usage during graph traversal (10.6.2.127):</p>
+							<img src="images/12.png">
+							<p>To enable iterative graph processing for your data, you will need to ensure that your vertex and edge collections are sharded in a specific way.
+The pregel computing model requires all edges to be present on the DB Server where the vertex document identified by the _from value is located. This means the vertex collections need to be sharded by'_key' and the edge collection will need to be sharded after an attribute which always contains the'_key' of the vertex.
+Our implementation currently requires every edge collection to be sharded after a "vertex" attributes, additionally you will need to specify the key distributeShardsLike and an equal number of shards on every collection. Only if these requirements are met can ArangoDB place the edges and vertices correctly .
+
+Using the pregel framework integrated in arangodb to run the Pagerank algorithm for one iteration, the time cost is more than 40 minutes, and it fails to run out of the specific time, which is slower than the stand-alone mode, and the threshold is set to 0.000001</p>
+							<img src="images/13.png">
+							
+							
+						</div>
+
+					</div>
+
+				<!-- Footer -->
+				<!--
+					<footer id="footer">
+						<div class="inner">
+							<section>
+								<h2>Get in touch</h2>
+								<form method="post" action="#">
+									<div class="field half first">
+										<input type="text" name="name" id="name" placeholder="Name" />
+									</div>
+									<div class="field half">
+										<input type="email" name="email" id="email" placeholder="Email" />
+									</div>
+									<div class="field">
+										<textarea name="message" id="message" placeholder="Message"></textarea>
+									</div>
+									<ul class="actions">
+										<li><input type="submit" value="Send" class="special" /></li>
+									</ul>
+								</form>
+							</section>
+							<section>
+								<h2>Follow</h2>
+								<ul class="icons">
+									<li><a href="#" class="icon style2 fa-twitter"><span class="label">Twitter</span></a></li>
+									<li><a href="#" class="icon style2 fa-facebook"><span class="label">Facebook</span></a></li>
+									<li><a href="#" class="icon style2 fa-instagram"><span class="label">Instagram</span></a></li>
+									<li><a href="#" class="icon style2 fa-dribbble"><span class="label">Dribbble</span></a></li>
+									<li><a href="#" class="icon style2 fa-github"><span class="label">GitHub</span></a></li>
+									<li><a href="#" class="icon style2 fa-500px"><span class="label">500px</span></a></li>
+									<li><a href="#" class="icon style2 fa-phone"><span class="label">Phone</span></a></li>
+									<li><a href="#" class="icon style2 fa-envelope-o"><span class="label">Email</span></a></li>
+								</ul>
+							</section>
+							<ul class="copyright">
+								<li>&copy; Untitled. All rights reserved</li><li>Design: <a href="http://html5up.net">HTML5 UP</a></li>
+							</ul>
+						</div>
+					</footer>
+				-->
+					<footer>
+						<div class="inner">
+							
+							<ul class="copyright">
+								<li>&copy; chuyang gao. All rights reserved</li><li>Design: <a href="http://html5up.net">HTML5 UP</a></li>
+							</ul>
+						</div>
+
+					</footer
+			</div>
+
+		<!-- Scripts -->
+			<script src="assets/js/jquery.min.js"></script>
+			<script src="assets/js/skel.min.js"></script>
+			<script src="assets/js/util.js"></script>
+			<!--[if lte IE 8]><script src="assets/js/ie/respond.min.js"></script><![endif]-->
+			<script src="assets/js/main.js"></script>
+
+	</body>
+</html>
